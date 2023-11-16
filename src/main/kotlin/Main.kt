@@ -1,4 +1,9 @@
+package  org.example
+
+import org.another.callAnotherPackage
+
 fun myFunction(a: Int, b: Int): Int {
+    println()
     return a + b
 }
 
@@ -35,10 +40,41 @@ fun main(args: Array<String>) {
         println(item)
     }
 
+    // Loop and labels
+    loop@ for (i in 1..100) {
+        for (j in 1..100) {
+            if (i >= 2 && j > 1) {
+                break@loop
+            }
+        }
+    }
+
+    listOf(1, 2, 3, 4, 5).forEach lit@{
+        if (it == 3) {
+            return@lit
+        }
+    }
+
+    // Implicit label
+    listOf(1, 2, 3, 4, 5).forEach {
+        if (it == 3) {
+            return@forEach
+        }
+    }
+
+    listOf(1, 2, 3, 4, 5).forEach(fun(value: Int) {
+        if (value == 3) {
+            return
+        }
+    })
+
     // "when" expression
     println("${describe(1)}, ${describe("hello")}, ${describe(3.3)}, ${describe(false)}")
 
     // Lambda filtering and mapping
     val items2 = listOf("apple", "banana", "pear")
     items2.filter { it.length > 4 }.map { it.uppercase() }.fold("") { acc, x -> "$acc $x" }.forEach { println(it) }
+
+    // Call another package
+    callAnotherPackage()
 }
