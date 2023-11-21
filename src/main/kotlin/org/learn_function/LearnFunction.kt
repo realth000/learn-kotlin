@@ -1,5 +1,7 @@
 package org.learn_function
 
+import org.example.org.learn_function.buildHTML
+
 // Default value
 fun read(bytes: ByteArray, off: Int = 0, size: Int = bytes.size) {}
 
@@ -76,5 +78,6 @@ fun learnFunction() {
     tailrec fun foo11(x: Int): Int = if (x > 5) x else foo11(x + 1)
     println("foo11: ${foo11(3)}")
 
-    //
+    val htmlData = buildHTML("some", "extra", "text!")
+    println(htmlData)
 }
