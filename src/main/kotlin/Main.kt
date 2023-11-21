@@ -3,6 +3,7 @@ package  org.example
 import org.another.callAnotherPackage
 import org.learn_class.LearnClass
 import org.learn_class.callProgrammer
+import org.learn_function.learnFunction
 import org.learn_generics.learnGenerics
 
 fun myFunction(a: Int, b: Int): Int {
@@ -88,4 +89,7 @@ fun main(args: Array<String>) {
 
     println("---------- learn generics ----------")
     learnGenerics()
+
+    println("---------- learn functions ----------")
+    learnFunction()
 }
