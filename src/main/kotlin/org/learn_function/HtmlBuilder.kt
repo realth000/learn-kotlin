@@ -68,6 +68,14 @@ abstract class TagWithText(val name: String) : Element {
     operator fun String.unaryPlus() {
         children.add(TextElement(this))
     }
+
+    fun addAttr(key: String, value: String) {
+        attributes[key] = value
+    }
+
+    fun getAttr(): HashMap<String, String> {
+        return attributes
+    }
 }
 
 /// head and body can only be used in "html" scope.
