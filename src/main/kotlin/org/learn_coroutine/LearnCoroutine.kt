@@ -1,6 +1,9 @@
 package org.example.org.learn_coroutine
 
 import kotlinx.coroutines.*
+import kotlinx.coroutines.channels.*
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flow
 import kotlin.system.measureTimeMillis
 
 fun learnCoroutine() {
@@ -8,7 +11,9 @@ fun learnCoroutine() {
 //    cancelAndTimeout()
 //    getCoroutineResult()
 //    asyncStyleFunctions()
-    errorHandling()
+//    errorHandling()
+//    stream()
+    channel()
 }
 
 // Coroutine is a series of tasks, or a series of code in `launch` or `async` block.
@@ -230,5 +235,154 @@ private fun errorHandling() = runBlocking {
         println("Unreached")
     } catch (e: ArithmeticException) {
         println("Caught ArithmeticException")
+    }
+}
+
+private fun stream() {
+    // Make a stream synchronously.
+    fun simple(): Sequence<Int> = sequence {
+        for (i in 1..3) {
+            Thread.sleep(100)
+            // `yield` to make a stream
+            yield(i)
+        }
+    }
+
+    simple().forEach { v -> println(v) }
+
+    // `Flow` is asynchronous `stream`.
+    // Without `suspend` keyword.
+    fun simple2(): Flow<Int> = flow {
+        for (i in 1..3) {
+            delay(100)
+            // Use `emit` to yield a value.
+            emit(i)
+        }
+    }
+
+    runBlocking {
+        launch {
+            for (k in 1..3) {
+                println("main: $k")
+                delay(100)
+            }
+        }
+
+        // Flow started only before it is going to be used.
+        // Flow is lazy.
+        simple2().collect { v -> println("Flow: $v") }
+    }
+
+    fun simple3(): Flow<Int> = flow {
+        // Here should not call in:
+        // 1. `withContext`.
+        // 2. `launch`.
+        // Otherwise, the value emitted will not be in the same coroutine with `collect`.
+        for (i in 1..3) {
+            delay(100)
+            emit(i)
+        }
+    }
+
+    runBlocking {
+        // Here is safe to:
+        // 1. Directly call.
+        // 2. Call in `launch`.
+        // 3. Call in `withContext(Dispatchers.Default)`.
+        simple3().collect { v -> println("simple3: $v") }
+    }
+}
+
+// Channel used to transfer a stream of values between coroutines.
+private fun channel() {
+    // Default when the `capacity` not set, it will wait for a `receive` before sending another value.
+    // `capacity` works like a buffer that save values and makes the producer not blocking.
+    // `capacity` works like channel buffer size in golang.
+    val channel = Channel<Int>(10)
+    runBlocking {
+        launch {
+            for (x in 1..5) {
+                delay(200)
+                val value = x * x
+                println("channel: send $value")
+                channel.send(value)
+            }
+        }
+        launch {
+            // We specified to `receive` how many times.
+            // If receive times is more than send times, program blocks forever because the `receive` is never going to
+            // finish.
+            // If receive times is less than send times, program exits before send finished because the main thread
+            // reached the end, just like a main goroutine finish will stop all other goroutines.
+            repeat(5) {
+                delay(400)
+                // `receive` is a suspend function.
+                println("channel: ${channel.receive()}")
+            }
+        }
+    }
+
+
+    // Convenience way to build a producer.
+    @OptIn(ExperimentalCoroutinesApi::class)
+    fun CoroutineScope.produceSquares(): ReceiveChannel<Int> = produce {
+        for (x in 1..5) {
+            send(x * x)
+        }
+    }
+
+    runBlocking {
+        val squares = produceSquares()
+        // Use `consumeEach` to take place of `for` loop.
+        squares.consumeEach { println("consumeEach: $it") }
+    }
+
+    // Build a pipeline
+    @OptIn(ExperimentalCoroutinesApi::class)
+    fun CoroutineScope.numbersFrom(start: Int) = produce(capacity = 4) {
+        var x = start
+        while (true) {
+            delay(400)
+            send(x++)
+        }
+    }
+
+    // Make a filter to construct pipeline.
+    @OptIn(ExperimentalCoroutinesApi::class)
+    fun CoroutineScope.filter(numbers: ReceiveChannel<Int>, prime: Int) = produce {
+        for (x in numbers) {
+            if (x % prime != 0) {
+                send(x)
+            }
+        }
+    }
+
+    runBlocking {
+        var cur = numbersFrom(2)
+
+        repeat(3) {
+            val prime = cur.receive()
+            println(prime)
+            cur = filter(cur, prime)
+        }
+        coroutineContext.cancelChildren()
+    }
+
+    // Multiple coroutine send to a same channel
+    suspend fun sendString(channel: SendChannel<Pair<String, String>>, s: Pair<String, String>, time: Long) {
+        while (true) {
+            delay(time)
+            channel.send(s)
+        }
+    }
+
+    runBlocking {
+        val channel = Channel<Pair<String, String>>()
+        launch { sendString(channel, Pair("hello", "foo"), 200L) }
+        launch { sendString(channel, Pair("world", "BAR!"), 500L) }
+        repeat(6) {
+            val data = channel.receive()
+            println("channel: receive ${data.second} form ${data.first}")
+        }
     }
 }
