@@ -384,5 +384,28 @@ private fun channel() {
             val data = channel.receive()
             println("channel: receive ${data.second} form ${data.first}")
         }
+        println("channel: done!")
+        coroutineContext.cancelChildren()
+    }
+
+    data class Ball(var hits: Int)
+
+    suspend fun player(name: String, table: Channel<Ball>) {
+        for (ball in table) {
+            ball.hits++
+            println("$name $ball")
+            delay(300)
+            table.send(ball)
+        }
+    }
+
+    runBlocking {
+        // Two coroutines share the same channel.
+        val table = Channel<Ball>()
+        launch { player("ping", table) }
+        launch { player("pong", table) }
+        table.send(Ball(0))
+        delay(2000)
+        coroutineContext.cancelChildren()
     }
 }
