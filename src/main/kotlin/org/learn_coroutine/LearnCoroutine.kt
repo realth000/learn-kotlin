@@ -7,12 +7,12 @@ import kotlinx.coroutines.flow.flow
 import kotlin.system.measureTimeMillis
 
 fun learnCoroutine() {
-//    learnRunBlocking()
-//    cancelAndTimeout()
-//    getCoroutineResult()
-//    asyncStyleFunctions()
-//    errorHandling()
-//    stream()
+    learnRunBlocking()
+    cancelAndTimeout()
+    getCoroutineResult()
+    asyncStyleFunctions()
+    errorHandling()
+    stream()
     channel()
 }
 
@@ -294,6 +294,7 @@ private fun stream() {
 }
 
 // Channel used to transfer a stream of values between coroutines.
+@OptIn(ObsoleteCoroutinesApi::class)
 private fun channel() {
     // Default when the `capacity` not set, it will wait for a `receive` before sending another value.
     // `capacity` works like a buffer that save values and makes the producer not blocking.
@@ -407,5 +408,24 @@ private fun channel() {
         table.send(Ball(0))
         delay(2000)
         coroutineContext.cancelChildren()
+    }
+
+    // Ticker channels
+    runBlocking {
+        val tickerChannel = ticker(delayMillis = 100, initialDelayMillis = 0)
+        var nextElement = withTimeoutOrNull(1) { tickerChannel.receive() }
+        println("Initial element is available immediately: $nextElement")
+
+        nextElement = withTimeoutOrNull(50) { tickerChannel.receive() }
+        println("Next element is not ready in 50 ms: $nextElement")
+
+        nextElement = withTimeoutOrNull(60) { tickerChannel.receive() }
+        println("Next element is not ready in 60 ms: $nextElement")
+
+        println("consumer pause for 150 ms")
+        delay(150)
+        nextElement = withTimeoutOrNull(1) { tickerChannel.receive() }
+        println("Next element is available immediately: $nextElement")
+        tickerChannel.cancel()
     }
 }
