@@ -4,6 +4,7 @@ import org.another.callAnotherPackage
 import org.example.org.learn_coroutine.learnCoroutine
 import org.learn_class.LearnClass
 import org.learn_class.callProgrammer
+import org.learn_collection.learnCollection
 import org.learn_function.learnFunction
 import org.learn_generics.learnGenerics
 import org.learn_null_safety.learnNullSafety
@@ -100,4 +101,7 @@ fun main(args: Array<String>) {
 
     println("---------- learn coroutine ----------")
     learnCoroutine()
+
+    println("---------- learn collection ----------")
+    learnCollection()
 }
